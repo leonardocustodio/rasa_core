@@ -168,6 +168,15 @@ class OutputChannel(object):
             self.send_text_message(recipient_id,
                                    message.get("text"))
 
+        if message.get("pass_thread_control"):
+            self.send_pass_thread_control(recipient_id,
+                                          message.get("pass_thread_control")[0]["target_app_id"],
+                                          message.get("pass_thread_control")[0]["metadata"])
+
+        elif message.get("take_thread_control"):
+            self.send_take_thread_control(recipient_id,
+                                          message.get("take_thread_control")[0]["metadata"])
+
         # if there is an image we handle it separately as an attachment
         if message.get("image"):
             self.send_image_url(recipient_id, message.get("image"))
@@ -205,6 +214,22 @@ class OutputChannel(object):
         for idx, button in enumerate(buttons):
             button_msg = button_to_string(button, idx)
             self.send_text_message(recipient_id, button_msg)
+
+    def send_quick_replies(self, recipient_id, message, buttons, **kwargs):
+        # type: (Text, Text, List[Dict[Text, Any]], Any) -> None
+        """Sends quick replies to the output.
+        Default implementation will just post the buttons as a string."""
+
+        self.send_text_message(recipient_id, message)
+        for idx, button in enumerate(buttons):
+            button_msg = button_to_string(button, idx)
+            self.send_text_message(recipient_id, button_msg)
+
+    def send_pass_thread_control(self, recipient_id, app_id, metadata, **kwargs):
+        self.send_pass_thread_control(recipient_id, app_id, metadata)
+
+    def send_take_thread_control(self, recipient_id, metadata, **kwargs):
+        self.send_take_thread_control(recipient_id, metadata)
 
     def send_custom_message(self,
                             recipient_id: Text,

@@ -22,10 +22,12 @@ class Messenger(BaseMessenger):
 
     def __init__(self,
                  page_access_token: Text,
-                 on_new_message: Callable[[UserMessage], None]) -> None:
+                 on_new_message: Callable[[UserMessage], None],
+                 thread_control_authorized: List[int]) -> None:
 
         self.page_access_token = page_access_token
         self.on_new_message = on_new_message
+        self.thread_control_authorized = thread_control_authorized
         super(Messenger, self).__init__(self.page_access_token)
 
     @staticmethod
@@ -42,14 +44,43 @@ class Messenger(BaseMessenger):
                 message['message'].get('text') and
                 not message['message'].get("is_echo"))
 
+    @staticmethod
+    def _is_user_location(message: Dict[Text, Any]) -> bool:
+        """Check if the users message is a recorced voice message."""
+        return (message.get('message') and
+                message['message'].get('attachments') and
+                message['message']['attachments'][0]['type'] == 'location')
+
+    @staticmethod
+    def _is_request_thread_control(message: Dict[Text, Any]) -> bool:
+        """Check if facebook is requesting thread control."""
+        return (message.get('request_thread_control') and
+                message['request_thread_control'].get('requested_owner_app_id'))
+
+    @staticmethod
+    def _is_pass_thread_control(message: Dict[Text, Any]) -> bool:
+        """Check if facebook is passing thread control."""
+        return (message.get('pass_thread_control') and
+                message['pass_thread_control'].get('new_owner_app_id'))
+
     def message(self, message: Dict[Text, Any]) -> None:
         """Handle an incoming event from the fb webhook."""
+        print("Message: {}".format(message))
 
         if self._is_user_message(message):
             text = message['message']['text']
+
+            if len(message['message']['text']) > 512:
+                self._handle_user_message('/long_text', self.get_user_id())
+                return
+
         elif self._is_audio_message(message):
             attachment = message['message']['attachments'][0]
             text = attachment['payload']['url']
+        elif self._is_user_location(message):
+            attachment = message['message']['attachments'][0]
+            coordinates = attachment['payload']['coordinates']
+            text = "{} {}".format(coordinates['lat'], coordinates['long'])
         else:
             logger.warning("Received a message from facebook that we can not "
                            "handle. Message: {}".format(message))
@@ -59,12 +90,14 @@ class Messenger(BaseMessenger):
 
     def postback(self, message: Dict[Text, Any]) -> None:
         """Handle a postback (e.g. quick reply button)."""
+        print("Handling postback: {}".format(message))
 
         text = message['postback']['payload']
         self._handle_user_message(text, self.get_user_id())
 
     def _handle_user_message(self, text: Text, sender_id: Text) -> None:
         """Pass on the text to the dialogue engine for processing."""
+        print("Handling User Message: {}".format(text))
 
         out_channel = MessengerBot(self.client)
         user_msg = UserMessage(text, out_channel, sender_id,
@@ -93,6 +126,22 @@ class Messenger(BaseMessenger):
     def optin(self, message: Dict[Text, Any]) -> None:
         """Do nothing. Method to handle `messaging_optins`"""
         pass
+
+    def handover(self, message: Dict[Text, Any]) -> None:
+
+        print("Handover: {}".format(message))
+
+        if self._is_request_thread_control(message):
+            if not message['request_thread_control']['requested_owner_app_id'] in self.thread_control_authorized:
+                logger.warning("Received a request thread control from facebook"
+                               "from an app that is not authorized: {}".format(message))
+                pass
+            else:
+                MessengerBot(self.client).send_pass_thread_control(self.get_user_id(), message['request_thread_control']['requested_owner_app_id'], message['request_thread_control']['metadata'])
+                self._handle_user_message('/passed_thread_control', self.get_user_id())
+
+        elif self._is_pass_thread_control(message):
+            self._handle_user_message('/reconnect_user', self.get_user_id())
 
 
 class MessengerBot(OutputChannel):
@@ -161,6 +210,34 @@ class MessengerBot(OutputChannel):
                                        {"sender": {"id": recipient_id}},
                                        'RESPONSE')
 
+    def send_quick_replies(self, recipient_id, text, quick_replies, **kwargs):
+        # type: (Text, Text, List[Dict[Text, Any]], Any) -> None
+        """Sends quick replies to the output."""
+
+        self._add_text_info(quick_replies)
+
+        # Currently there is no predefined way to create a message with
+        # custom quick_replies in the fbmessenger framework - so we need to create the
+        # payload on our own
+        payload = {
+            "text": text,
+            "quick_replies": quick_replies
+        }
+        self.messenger_client.send(payload,
+                                   {"sender": {"id": recipient_id}},
+                                   'RESPONSE')
+
+    def send_pass_thread_control(self, recipient_id, app_id, metadata, **kwargs):
+        print("Recipient ID: {}".format(recipient_id))
+        self.messenger_client.pass_thread_control(app_id,
+                                                  metadata,
+                                                  {"recipient": {"id": recipient_id}})
+
+    def send_take_thread_control(self, recipient_id, metadata, **kwargs):
+        print("Take Control - Recipient ID: {}".format(recipient_id))
+        self.messenger_client.take_thread_control(metadata,
+                                                  {"recipient": {"id": recipient_id}})
+
     def send_custom_message(self, recipient_id: Text,
                             elements: List[Dict[Text, Any]]) -> None:
         """Sends elements to the output."""
@@ -189,6 +266,15 @@ class MessengerBot(OutputChannel):
                 button['type'] = "postback"
 
     @staticmethod
+    def _add_text_info(quick_replies):
+        # type: (List[Dict[Text, Any]]) -> None
+        """Set the quick reply type to text for all buttons without content type.
+        Happens in place."""
+        for quick_reply in quick_replies:
+            if 'content_type' not in quick_reply:
+                quick_reply['content_type'] = "text"
+
+    @staticmethod
     def _recipient_json(recipient_id: Text) -> Dict[Text, Dict[Text, Text]]:
         """Generate the response json for the recipient expected by FB."""
         return {"sender": {"id": recipient_id}}
@@ -208,10 +294,11 @@ class FacebookInput(InputChannel):
 
         return cls(credentials.get("verify"),
                    credentials.get("secret"),
-                   credentials.get("page-access-token"))
+                   credentials.get("page-access-token"),
+                   credentials.get("thread-control-authorized"))
 
     def __init__(self, fb_verify: Text, fb_secret: Text,
-                 fb_access_token: Text) -> None:
+                 fb_access_token: Text, fb_thread_control_authorized: List[int]) -> None:
         """Create a facebook input channel.
 
         Needs a couple of settings to properly authenticate and validate
@@ -228,6 +315,7 @@ class FacebookInput(InputChannel):
         self.fb_verify = fb_verify
         self.fb_secret = fb_secret
         self.fb_access_token = fb_access_token
+        self.fb_thread_control_authorized = fb_thread_control_authorized
 
     def blueprint(self, on_new_message):
 
@@ -256,7 +344,7 @@ class FacebookInput(InputChannel):
                                "secret in your facebook app settings")
                 return "not validated"
 
-            messenger = Messenger(self.fb_access_token, on_new_message)
+            messenger = Messenger(self.fb_access_token, on_new_message, self.fb_thread_control_authorized)
 
             messenger.handle(request.get_json(force=True))
             return "success"
