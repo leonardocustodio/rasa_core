@@ -160,6 +160,11 @@ class OutputChannel(object):
         if message.get("elements"):
             self.send_custom_message(recipient_id, message.get("elements"))
 
+        elif message.get("quick_replies"):
+            self.send_quick_replies(recipient_id,
+                                    message.get("text"),
+                                    message.get("quick_replies"))
+
         elif message.get("buttons"):
             self.send_text_with_buttons(recipient_id,
                                         message.get("text"),
