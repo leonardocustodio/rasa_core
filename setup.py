@@ -26,6 +26,7 @@ tests_requires = [
 ]
 
 install_requires = [
+    "git+git://github.com/leonardocustodio/fbmessenger@thread-control#fbmessenger=fbmessenger",
     "jsonpickle~=1.0",
     "redis~=2.0",
     "fakeredis~=0.10.0",
@@ -38,7 +39,6 @@ install_requires = [
     "apscheduler~=3.0",
     "tqdm~=4.0",
     "networkx~=2.2",
-    "fbmessenger~=5.0",
     "pykwalify~=1.7.0",
     "coloredlogs~=10.0",
     "ruamel.yaml~=0.15.0",
