@@ -7,12 +7,10 @@ from fbmessenger import (
     BaseMessenger, MessengerClient, attachments)
 from fbmessenger.elements import Text as FBText
 from flask import Blueprint, request, jsonify
-from dashbot import generic
 
 from rasa_core.channels.channel import UserMessage, OutputChannel, InputChannel
 
 logger = logging.getLogger(__name__)
-dba = generic.generic('pEMhy004oemaEIoBYVXvJIlvSxDDM4F75KdcU2R7')
 
 
 class Messenger(BaseMessenger):
@@ -68,7 +66,6 @@ class Messenger(BaseMessenger):
     def message(self, message: Dict[Text, Any]) -> None:
         """Handle an incoming event from the fb webhook."""
         print("Message: {}".format(message))
-        dba.logIncoming(message)
 
         if self._is_user_message(message):
             text = message['message']['text']
