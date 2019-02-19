@@ -71,7 +71,7 @@ install_requires = [
 ]
 
 dependency_links = [
-    "git+git://github.com/leonardocustodio/fbmessenger@thread-control#fbmessenger=fbmessenger"
+    "https://github.com/leonardocustodio/fbmessenger/tarball/thread-control#egg=fbmessenger=5.9.10"
 ]
 
 extras_requires = {
