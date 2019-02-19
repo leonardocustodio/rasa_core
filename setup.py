@@ -26,7 +26,7 @@ tests_requires = [
 ]
 
 install_requires = [
-    "git+git://github.com/leonardocustodio/fbmessenger@thread-control#fbmessenger=fbmessenger",
+    "fbmessenger==5.9.10"
     "jsonpickle~=1.0",
     "redis~=2.0",
     "fakeredis~=0.10.0",
@@ -70,6 +70,10 @@ install_requires = [
     "keras-preprocessing==1.0.5"
 ]
 
+dependency_links = [
+    "git+git://github.com/leonardocustodio/fbmessenger@thread-control#fbmessenger=fbmessenger"
+]
+
 extras_requires = {
     "test": tests_requires
 }
@@ -89,6 +93,7 @@ setup(
     packages=find_packages(exclude=["tests", "tools"]),
     version=__version__,
     install_requires=install_requires,
+    dependency_links=dependency_links,
     tests_require=tests_requires,
     extras_require=extras_requires,
     include_package_data=True,
