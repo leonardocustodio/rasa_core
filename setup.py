@@ -26,7 +26,7 @@ tests_requires = [
 ]
 
 install_requires = [
-    "fbmessenger==5.9.10"
+    "fbmessenger==5.9.10",
     "jsonpickle~=1.0",
     "redis~=2.0",
     "fakeredis~=0.10.0",
