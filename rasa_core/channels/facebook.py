@@ -63,6 +63,12 @@ class Messenger(BaseMessenger):
         return (message.get('pass_thread_control') and
                 message['pass_thread_control'].get('new_owner_app_id'))
 
+    @staticmethod
+    def _is_referral(message: Dict[Text, Any]) -> bool:
+        """Check if facebook is passing a referral."""
+        return (message.get('referral') and
+                message['referral'].get('ref'))
+
     def message(self, message: Dict[Text, Any]) -> None:
         """Handle an incoming event from the fb webhook."""
         print("Message: {}".format(message))
@@ -142,6 +148,10 @@ class Messenger(BaseMessenger):
 
         elif self._is_pass_thread_control(message):
             self._handle_user_message('/reconnect_user', self.get_user_id())
+
+    def referral(self, message: Dict[Text, Any]) -> None:
+        if self._is_referral(message):
+            self._handle_user_message('/referral{"ref": ' + '"' + str(message['referral']['ref']) + '"}', self.get_user_id())
 
 
 class MessengerBot(OutputChannel):
