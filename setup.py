@@ -12,6 +12,7 @@ exec(open("rasa_core/version.py").read())
 with io.open(os.path.join(here, "README.md"), encoding="utf-8") as f:
     long_description = f.read()
 
+# noinspection PyPackageRequirements
 tests_requires = [
     "pytest~=3.0",
     "pytest-pycodestyle~=1.3",
@@ -26,7 +27,7 @@ tests_requires = [
 ]
 
 install_requires = [
-    "fbmessenger @ https://github.com/leonardocustodio/fbmessenger/tarball/thread-control#egg=fbmessenger=5.9.10",
+    "fbmessenger @ https://github.com/leonardocustodio/fbmessenger/tarball/thread-control#egg=fbmessenger=5.9.15",
     "jsonpickle~=1.0",
     "redis~=2.0",
     "fakeredis~=0.10.0",
