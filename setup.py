@@ -27,7 +27,7 @@ tests_requires = [
 ]
 
 install_requires = [
-    "fbmessenger @ https://github.com/leonardocustodio/fbmessenger/tarball/thread-control#egg=fbmessenger=5.9.15",
+    "fbmessenger @ https://github.com/leonardocustodio/fbmessenger/tarball/thread-control#egg=fbmessenger=5.9.16",
     "jsonpickle~=1.0",
     "redis~=2.0",
     "fakeredis~=0.10.0",
