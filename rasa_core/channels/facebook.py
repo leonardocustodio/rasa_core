@@ -359,9 +359,6 @@ class FacebookInput(InputChannel):
         @fb_webhook.route("/webhook", methods=['POST'])
         def webhook():
             signature = request.headers.get("X-Hub-Signature") or ''
-            logger.error('X-Hub-Signature: {}'.format(signature))
-            logger.error('Fb Secret: {}'.format(self.fb_secret))
-            logger.error('Request Data: {}'.format(request.data))
 
             if not self.validate_hub_signature(self.fb_secret, request.data,
                                                signature):
@@ -401,9 +398,6 @@ class FacebookInput(InputChannel):
                 bytearray(app_secret, 'utf8'),
                 request_payload, digest_module)
             generated_hash = hmac_object.hexdigest()
-            logger.error('Digest Module: {0}'.format(digest_module))
-            logger.error('Request payload: {0}'.format(request_payload))
-            logger.error('Generated Hash: {0}'.format(generated_hash))
 
             if hub_signature == generated_hash:
                 return True
