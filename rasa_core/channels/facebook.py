@@ -401,6 +401,10 @@ class FacebookInput(InputChannel):
                 bytearray(app_secret, 'utf8'),
                 request_payload, digest_module)
             generated_hash = hmac_object.hexdigest()
+            logger.error('Digest Module: {0}'.format(digest_module))
+            logger.error('Request payload: {0}'.format(request_payload))
+            logger.error('Generated Hash: {0}'.format(generated_hash))
+
             if hub_signature == generated_hash:
                 return True
         return False
