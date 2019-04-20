@@ -348,6 +348,10 @@ class FacebookInput(InputChannel):
         @fb_webhook.route("/webhook", methods=['POST'])
         def webhook():
             signature = request.headers.get("X-Hub-Signature") or ''
+            logger.error('X-Hub-Signature: {}'.format(signature))
+            logger.error('Fb Secret: {}'.format(self.fb_secret))
+            logger.error('Request Data: {}'.format(request.data))
+
             if not self.validate_hub_signature(self.fb_secret, request.data,
                                                signature):
                 logger.warning("Wrong fb secret! Make sure this matches the "
