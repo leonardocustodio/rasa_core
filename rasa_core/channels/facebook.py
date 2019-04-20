@@ -38,6 +38,13 @@ class Messenger(BaseMessenger):
                 message['message']['attachments'][0]['type'] == 'audio')
 
     @staticmethod
+    def _is_image_message(message: Dict[Text, Any]) -> bool:
+        """Check if the users message is a image."""
+        return (message.get('message') and
+                message['message'].get('attachments') and
+                message['message']['attachments'][0]['type'] == 'image')
+
+    @staticmethod
     def _is_user_message(message: Dict[Text, Any]) -> bool:
         """Check if the message is a message from the user"""
         return (message.get('message') and
@@ -79,6 +86,10 @@ class Messenger(BaseMessenger):
             if len(message['message']['text']) > 512:
                 self._handle_user_message('/long_text', self.get_user_id())
                 return
+
+        elif self._is_image_message(message):
+            self._handle_user_message('/image_message', self.get_user_id())
+            return
 
         elif self._is_audio_message(message):
             attachment = message['message']['attachments'][0]
