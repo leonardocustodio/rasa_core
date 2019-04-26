@@ -76,6 +76,20 @@ class Dispatcher(object):
         self.latest_bot_messages.append(bot_message)
         self.output_channel.send_custom_message(self.sender_id, elements)
 
+    def utter_quick_replies_message(self,
+                             text: Text,
+                             quick_replies: List[Dict[Text, Any]],
+                             **kwargs: Any) -> None:
+        """Sends a message with buttons to the output channel."""
+        # Adding the text and data (buttons) to the latest bot messages
+        bot_message = BotMessage(text=text,
+                                 data={"quick_replies": quick_replies})
+
+        self.latest_bot_messages.append(bot_message)
+        self.output_channel.send_quick_replies(self.sender.id, text,
+                                               quick_replies,
+                                               **kwargs)
+
     def utter_button_message(self,
                              text: Text,
                              buttons: List[Dict[Text, Any]],
